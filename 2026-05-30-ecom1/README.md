@@ -8,7 +8,10 @@ ECOM1 was the first BitGN Agentic E-commerce challenge. The blind PROD window ra
 - [Speed](https://bitgn.com/l/ecom1-speed)
 - [Ultimate](https://bitgn.com/l/ecom1-ultimate)
 
-## Add your architecture
+
+## Add your architecture and insights!
+
+![](res/insights-teaser.png)
 
 1. Write the architecture in English.
 2. Add one markdown file in this folder named `ACCOUNTID_architecture-name.md`, for example `4jKiTS_checkout-ops-agent.md`.
