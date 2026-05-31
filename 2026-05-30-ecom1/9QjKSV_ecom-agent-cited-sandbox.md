@@ -23,18 +23,7 @@ orchestration. It is won by (1) letting the model write real code against the
 runtime instead of calling narrow tools, and (2) refusing to let it submit an answer
 that isn't grounded in files it actually read.
 
-```mermaid
-flowchart LR
-    TASK["Task"] --> AGENT
-    subgraph AGENT["Agent loop"]
-        direction LR
-        LLM["LLM<br/>(thinks, writes code)"] -->|code| SANDBOX["Sandbox<br/>(runs code, reads the store)"]
-        SANDBOX -->|results| LLM
-    end
-    AGENT -->|answer| GATES{"Gates<br/>grounded?"}
-    GATES -->|"no — fix it"| AGENT
-    GATES -->|yes| ANSWER["Answer"]
-```
+![The Cited Sandbox — one open-weight model drives a sandbox through one execute_script tool; deterministic gates reject any ungrounded answer](res/9QjKSV-architecture.png)
 
 ## How does it work?
 
@@ -180,39 +169,6 @@ flowchart LR
 5. **Trust measurement over inference.** When my locked-score guess disagreed with the
    measured dev prior, the measured prior was right.
 6. **Delete components that don't pay.** The judge was the clearest example.
-
-## Optional: Diagram
-
-Full system view — control plane, per-trial runtime, gates, and logging:
-
-```mermaid
-flowchart TB
-    subgraph CP["Control plane — main.ts (benchmark-agnostic)"]
-        direction TB
-        S["startRun"] --> T["per trial: startTrial → runAgent → endTrial"]
-        T --> SUB["submitRun"] --> POLL["poll deferred scores"] --> ST["persist tasksState"]
-    end
-
-    subgraph RT["Per-trial runtime — src/"]
-        direction TB
-        SP["preload + system prompt"] --> LOOP{"step loop<br/>≤ 35 steps"}
-        LOOP -->|"code"| LLM["OpenRouter LLM"]
-        LLM --> VM["Bun sandbox<br/>harness · scratchpad · console"]
-        VM -->|"output"| LOOP
-        LOOP -->|"harness.answer(scratchpad, verify)"| GATES
-    end
-
-    subgraph GATES["Submission gates — src/gates.ts"]
-        direction TB
-        G["refs ⊆ what was read · citations justified ·<br/>outcome ∈ 5 classes · verify(sp) · literal tokens present"]
-    end
-
-    T -.drives.-> RT
-    GATES -->|reject + fix-it| LOOP
-    GATES -->|pass| GRADE["BitGN grader (deferred)"]
-    GRADE -.scores.-> POLL
-    RT & CP -.emit.-> EV["event bus → runs/&lt;runId&gt;.jsonl → web UI"]
-```
 
 ---
 
