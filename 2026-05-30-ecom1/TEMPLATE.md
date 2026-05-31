@@ -2,6 +2,9 @@
 source_code: https://github.com/YOUR_ACCOUNT/YOUR_REPO
 run_ids:
   - run-YOUR_ECOM1_PROD_RUN_ID
+model_names:
+  - MODEL_NAME_USED_BY_SOLVER
+  - MODEL_NAME_USED_BY_EVALUATOR_OR_ROUTER
 author: Your Name
 author_linkedin: https://www.linkedin.com/in/YOUR_PROFILE/
 author_github: https://github.com/YOUR_ACCOUNT
@@ -32,6 +35,7 @@ List the LLM models you used and where they were used.
 - Classifier/router/planner, if any:
 - Evaluator or evolution loop, if any:
 - Runtime settings that mattered:
+- Were all listed models open-weight/local models?
 
 ## E-commerce OS Reasoning
 

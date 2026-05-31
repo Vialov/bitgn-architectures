@@ -1,6 +1,7 @@
 # Instructions to submit architectures for BitGN ECOM1
 
-<!-- AICODE-NOTE: Keep this frontmatter contract aligned with harness_hub/insights.NoteMetadata; ECOM1 uses challenge slug `ecom`, not the event slug `ECOM1`. -->
+<!-- AICODE-NOTE: Keep core frontmatter fields aligned with harness_hub/insights.NoteMetadata; ECOM1 uses challenge slug `ecom`, not the event slug `ECOM1`. -->
+<!-- AICODE-TODO: If architecture imports start using `model_names`, add the field to harness_hub/insights.NoteMetadata and use it for badges such as all-open-weights. -->
 
 ECOM1 was the first BitGN Agentic E-commerce challenge. The blind PROD window ran on **May 30, 2026**, and the architecture writeups in this folder are meant to link participant systems to the frozen Hall of Fame leaderboards:
 
@@ -17,11 +18,13 @@ ECOM1 was the first BitGN Agentic E-commerce challenge. The blind PROD window ra
 2. Add one markdown file in this folder named `ACCOUNTID_architecture-name.md`, for example `4jKiTS_checkout-ops-agent.md`.
 3. Use your BitGN account token as `ACCOUNTID`. This is the short public account id used on the leaderboards and in the existing architecture filenames.
 4. Start from [TEMPLATE.md](TEMPLATE.md) if you want a fill-in structure.
-5. Put YAML frontmatter at the top of the file. `source_code`, `run_ids`, `impact`, and `challenge` are the important fields. Author fields are optional; you can stay anonymous.
+5. Put YAML frontmatter at the top of the file. `source_code`, `run_ids`, `model_names`, `impact`, and `challenge` are the important fields. Author fields are optional; you can stay anonymous.
 6. If the same architecture produced multiple nominated or winning runs, list all relevant ECOM1 PROD run ids in one file. If you used meaningfully different architectures, create separate files.
 7. Open a PR with your new file, then ping Rinat.
 
 Use `challenge: ecom` for ECOM1 entries. The benchmark id behind these runs is `bitgn/ecom1-prod`.
+
+Use `model_names` for every LLM or local model that materially participated in the submitted system: solver, planner, router, verifier, evaluator, or rules-evolution loop. Please use recognizable model names, for example `gpt-5.4`, `claude-opus-4.5`, `qwen3-72b`, or `llama-4-70b`. If all listed models are open-weight/local models, BitGN may later award an open-weights architecture badge.
 
 ```md
 ---
@@ -29,6 +32,9 @@ source_code: https://github.com/example/ecom-agent
 run_ids:
   - run-22ExampleAccuracyRun
   - run-22ExampleSpeedRun
+model_names:
+  - gpt-5.4
+  - qwen3-72b
 author: Example Author
 author_linkedin: https://www.linkedin.com/in/example/
 author_github: https://github.com/example
