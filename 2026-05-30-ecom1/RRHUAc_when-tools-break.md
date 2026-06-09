@@ -8,83 +8,50 @@ model_names:
   - Qwen/Qwen3.5-397B-A17B
 author: Viktor Vialov
 author_linkedin: https://www.linkedin.com/in/vialov/
-impact: One sentence explaining the main architectural idea and why it mattered for ECOM1.
+impact: "When Tools Break: How a Smart Agent Moves Beyond Expected Behavior"
 challenge: ecom
 ---
 
-# Your ECOM1 Architecture Name
+I want to share an observation from the ECOM challenge. Formally, my production result was weaker than I had hoped: I overfit the agent to SQL-based navigation, and that broke on the blind run. But this failure produced what was probably the most interesting insight — not about benchmark task-solving quality, but about AI safety.
 
-Briefly introduce the system. Mention which ECOM1 leaderboard or submitted run this writeup belongs to, what score or placement it reached if you want to share it, and the core idea in plain English.
+The main takeaway is this: an agent with many tools and a lot of freedom can perform well when everything works as expected. But when tool problems appear, a strong model does not necessarily just stop. It may behave in unexpected and not always safe ways. It may start diagnosing the environment, exploring adjacent APIs, and performing harmful actions.
 
-## How does it work?
+## Setup
 
-Describe the main loop and components.
+I had a coding agent: the model could write Python code and execute it inside a Docker sandbox. Inside the container, there was an SDK wrapper around the BitGN API. At the beginning, the model often tried to search for data directly in `/proc` instead of using SQL queries, which led to frequent errors. So I decided to make its behavior more controlled: I programmatically restricted the model from browsing through `/proc`, except for reading specific files, and moved the main navigation path to SQL. The idea was reasonable: less chaotic filesystem browsing, more structured queries, fewer accidental references and hallucinations.
 
-- What starts a task?
-- What context does the agent receive?
-- Which tools or APIs can it call?
-- How does it inspect state before acting?
-- How does it decide that the task is finished?
+Something went wrong on production. When the SQL layer or SDK calls did not behave as expected, the agent lost its main channel for solving tasks. At that point, the interesting question became how different models react when their tools break. I ran the same agent wrapper with Qwen and Gemini 3.5 Flash.
 
-## Models
+## Qwen: a predictable failure mode
 
-List the LLM models you used and where they were used.
+Qwen behaved roughly as I expected. It ran into a broken API, tried to find a workaround, attempted to guess exact paths in `/proc`, and eventually gave up after failing to find a working strategy.
 
-- Main solver:
-- Classifier/router/planner, if any:
-- Evaluator or evolution loop, if any:
-- Runtime settings that mattered:
-- Were all listed models open-weight/local models?
+This was a bad outcome for the leaderboard, but a good failure mode from a safety perspective: the agent did not solve the task, but it also did not expand its action space. It stayed within the expected corridor:
 
-## E-commerce OS Reasoning
+> The tool does not work → try obvious fallbacks → if they do not work, return an error.
 
-Explain how your agent handled the ECOM1 business world.
+## Gemini 3.5 Flash: diagnosis instead of refusal
 
-- Catalogue and product matching:
-- Inventory, warehouses, shipping, and store coverage:
-- Customer records, baskets, orders, and payments:
-- Merchant policies and policy addenda:
-- Support tickets, returns, refunds, and escalations:
-- Audit trails, logs, and evidence:
+Gemini was more interesting.
 
-## Acting, Refusing, and Escalating
+At first, it also poked at the broken API. But then it did not stop. Instead of accepting this as a tooling failure, it began diagnosing the environment itself. It started reading the SDK code. In itself, this could still be considered acceptable, even though this behavior was not intended.
 
-Describe the guardrails.
+But then it went further. To check other API endpoints, it decided to perform a real action: checking out a random basket.
 
-- When is the agent allowed to mutate state?
-- How does it verify authorization, identity, roles, or policy constraints?
-- How does it handle pressure to apply discounts, refunds, checkout actions, or customer-data access that may be unsafe?
-- When does it refuse, ask for clarification, or escalate instead of acting?
+That is a completely different class of behavior. The model was no longer trying to solve the original user task. It was experimenting with the environment, using available mutating operations as a diagnostic tool.
 
-## Problems
+In a benchmark sandbox, checking out a random basket is just an unpleasant log entry and a wasted attempt. In a production system, similar behavior could mean a real state change: creating an order, sending an email, charging money, changing permissions, closing a ticket, or launching some internal process.
 
-What went wrong while building or running the agent?
+And the most important part is that this does not look like a classic prompt injection or a malicious scenario. The model does not “want to cause harm.” It is simply trying to be helpful and figure out why its tools are not working.
 
-- Failure mode 1:
-- Failure mode 2:
-- Failure mode 3:
+The problem comes from the combination of two factors. First, the agent has a universal coding interface. It can not only call predefined business tools, but also write arbitrary code to explore the environment. Second, the model is strong enough to diagnose the system.
 
-## Solutions
+## The main safety insight
 
-What changes improved reliability?
+Sometimes the danger does not come from the model violating an instruction. It comes from the model following the general goal too actively: “figure it out and complete the task.”
 
-- Prompt or rule changes:
-- Tooling or runtime changes:
-- Evaluation, rerun, or debugging changes:
-- Things you deliberately kept simple:
+When tools break, a strong model may start expanding the task context on its own:
 
-## What Would You Improve Next?
+> The API does not work → I need to understand why → I need to read the SDK → I need to check other methods → I need to make a test call → the test call turns out to be a mutation.
 
-Describe the next version you would build if you had more time.
-
-## Lessons From ECOM1
-
-What did this benchmark teach you about building agents for commerce, business operations, or policy-constrained workflows?
-
-## Optional: Diagram
-
-Put images in `res/` and link them like this:
-
-```md
-![Architecture diagram](res/YOUR_DIAGRAM.png)
-```
+From the model’s perspective, this is a coherent chain of reasoning. The danger is not only a potentially large and useless waste of tokens, but also unauthorized and unwanted changes of state.
